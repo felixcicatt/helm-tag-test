@@ -55,3 +55,35 @@ jobs:
           context: ./my-app
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Configure Git
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Install Helm
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        uses: azure/setup-helm@v1
+        with:
+          version: v3.8.1
+
+      - name: Install yq
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          wget https://github.com/mikefarah/yq/releases/download/v4.34.1/yq_linux_amd64 -O /usr/local/bin/yq
+          chmod +x /usr/local/bin/yq
+      
+      - name: Update chart values with new image tag
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          yq eval '.appVersion = "${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}"' -i charts/Chart.yaml
+          yq eval '.version = "${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}"' -i charts/Chart.yaml
+
+      - name: Run chart-releaser
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        uses: helm/chart-releaser-action@v1.4.0
+        with:
+          charts_dir: charts
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
