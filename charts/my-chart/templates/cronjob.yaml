@@ -1,0 +1,22 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: my-app
+spec:
+  schedule: "*/59 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: my-app
+            image: ghcr.io/felixcicatt/my-app
+            imagePullPolicy: Always
+            securityContext:
+              allowPrivilegeEscalation: false
+              runAsNonRoot: true
+              readOnlyRootFilesystem: true
+              runAsUser: 10000
+              capabilities:
+                drop: [ALL]
+          restartPolicy: Never
