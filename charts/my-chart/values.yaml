@@ -1,4 +1,4 @@
 image:
-  repository: "ghcr.io/felixcicatt/my-app"
+  repository: "ghcr.io/felixcicatt/helm-tag-test"
   pullPolicy: Always
   tag: ""
