@@ -10,7 +10,7 @@ spec:
         spec:
           containers:
           - name: my-app
-            image: ghcr.io/felixcicatt/my-app
+            image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
             imagePullPolicy: Always
             securityContext:
               allowPrivilegeEscalation: false

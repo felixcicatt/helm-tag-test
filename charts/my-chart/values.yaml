@@ -1,0 +1,4 @@
+image:
+  repository: "ghcr.io/felixcicatt/my-app"
+  pullPolicy: Always
+  tag: "main"

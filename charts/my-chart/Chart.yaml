@@ -1,0 +1,7 @@
+apiVersion: v2
+name: my-chart
+description: A test chart to play with semantic versioning of docker images and helm charts
+
+type: application
+version: 0.0.1
+appVersion: latest
