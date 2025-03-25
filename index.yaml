@@ -35,6 +35,17 @@ entries:
     - https://github.com/felixcicatt/helm-tag-test/releases/download/my-chart-0.1.0/my-chart-0.1.0.tgz
     version: 0.1.0
   - apiVersion: v2
+    appVersion: 0.0.8
+    created: "2025-03-25T16:54:25.640547162Z"
+    description: A test chart to play with semantic versioning of docker images and
+      helm charts
+    digest: dfb58d8e81e08dabf6b3de696ca47bdd1b3ba944b25beebfd67165f9b10d0093
+    name: my-chart
+    type: application
+    urls:
+    - https://github.com/felixcicatt/helm-tag-test/releases/download/my-chart-0.0.8/my-chart-0.0.8.tgz
+    version: 0.0.8
+  - apiVersion: v2
     appVersion: 0.0.7
     created: "2025-03-25T15:29:54.864976052Z"
     description: A test chart to play with semantic versioning of docker images and
@@ -111,4 +122,4 @@ entries:
     urls:
     - https://github.com/felixcicatt/helm-tag-test/releases/download/my-chart-0.0.1/my-chart-0.0.1.tgz
     version: 0.0.1
-generated: "2025-03-25T15:29:54.865014554Z"
+generated: "2025-03-25T16:54:25.640582788Z"
