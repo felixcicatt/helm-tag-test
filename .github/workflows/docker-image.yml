@@ -23,8 +23,29 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: 'Find the latest release tag (determined by semver sort)'
+        id: latest-semver
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          REPO_URL: ${{ github.event.repository.html_url }}
+          # Filter for semver tags like: v1.2.34 (Ignores pre-release tags)
+          TAG_FILTER: '^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$'
+        # Retrieves the tags for the repo sorted by version in descending order,
+        # `awk` strips away the first column (commit hash)
+        # `grep` filters the tags to only those we care about
+        # `head` takes the top/first line which is the highest ranged semver tag
+        # The result has `refs/tags/v` prefixing the semver value, similar to `github.ref`
+        run: |
+          TAG=$(
+            git ls-remote --exit-code --refs --tags --sort='-v:refname' "${REPO_URL}" \
+            | awk '{print $2}' | grep -E "${TAG_FILTER}" | head -n 1
+          )
+          echo "tag-ref=${TAG}" >> "${GITHUB_OUTPUT}"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      
       - name: Login to GitHub Container Registry
         if: ${{ github.event_name != 'pull_request' }}
         uses: docker/login-action@v3
@@ -32,16 +53,20 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
+          flavor: |
+            latest=${{ github.ref == steps.latest-semver.outputs.tag-ref }}
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha
+      
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
@@ -85,5 +110,6 @@ jobs:
         uses: helm/chart-releaser-action@v1.4.0
         with:
           charts_dir: charts
+          mark_as_latest: ${{ github.ref == steps.latest-semver.outputs.tag-ref }}
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
