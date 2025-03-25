@@ -107,7 +107,7 @@ jobs:
 
       - name: Run chart-releaser
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        uses: helm/chart-releaser-action@v1.4.0
+        uses: helm/chart-releaser-action@v1
         with:
           charts_dir: charts
           mark_as_latest: ${{ github.ref == steps.latest-semver.outputs.tag-ref }}
