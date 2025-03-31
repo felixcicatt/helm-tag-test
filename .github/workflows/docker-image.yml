@@ -109,11 +109,30 @@ jobs:
             yq eval '.appVersion = "${{ env.VERSION }}"' -i charts/my-chart/Chart.yaml
             yq eval '.version = "${{ env.VERSION }}"' -i charts/my-chart/Chart.yaml
 
-      - name: Run chart-releaser
+      - working-directory: charts
         if: ${{ fromJSON(env.SHOULD_RELEASE) }}
-        uses: helm/chart-releaser-action@v1
+        run:  |
+          helm package ./my-chart
+          curl --output _index.yaml https://felixcicatt.github.io/helm-tag-test/index.yaml
+          helm repo index . --url https://felixcicatt.github.io/helm-tag-test --merge ./_index.yaml
+
+      - name: Upload artifact
+        if: ${{ fromJSON(env.SHOULD_RELEASE) }}
+        uses: actions/upload-pages-artifact@v3
         with:
-          charts_dir: charts
-          mark_as_latest: ${{ fromJSON(env.IS_LATEST) }}
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          # directory of your reports
+          path: |
+            ./charts/index.yaml
+            ./charts/*.tgz
+
+  deploy:
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
