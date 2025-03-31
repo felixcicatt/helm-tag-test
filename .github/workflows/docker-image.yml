@@ -90,6 +90,14 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Install Helm
+        uses: azure/setup-helm@v1
+        with:
+          version: v3.8.1
+
+      - run: helm install test . --dry-run
+        working-directory: ./charts/my-chart
+
   release:
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     needs: build
