@@ -6,6 +6,7 @@ on:
     tags: ["v*.*.*"]
   pull_request:
     branches: ["main"]
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -89,6 +90,15 @@ jobs:
           context: ./my-app
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Install Helm
+        uses: azure/setup-helm@v1
+        with:
+          version: v3.8.1
+
+      - name: test helm chart
+        run: helm template . --debug
+        working-directory: ./charts/my-chart
 
   release:
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
