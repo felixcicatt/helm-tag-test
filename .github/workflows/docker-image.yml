@@ -113,9 +113,10 @@ jobs:
       - working-directory: charts
         if: ${{ fromJSON(env.SHOULD_RELEASE) }}
         run:  |
+          url=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq '.html_url')
           helm package ./my-chart
-          curl --output _index.yaml ${{ github.event.repository.html_url }}/index.yaml
-          helm repo index . --url ${{ github.event.repository.html_url }} --merge ./_index.yaml
+          curl --output _index.yaml $url/index.yaml
+          helm repo index . --url $url --merge ./_index.yaml
           mkdir ../pages
           mv index.yaml ../pages/
           mv *.tgz ../pages/
