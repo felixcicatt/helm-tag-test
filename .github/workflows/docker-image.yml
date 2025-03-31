@@ -96,7 +96,8 @@ jobs:
         with:
           version: v3.8.1
 
-      - run: helm install test . --dry-run
+      - name: test helm chart
+        run: helm template . --debug
         working-directory: ./charts/my-chart
 
   release:
