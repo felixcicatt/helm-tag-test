@@ -101,10 +101,7 @@ jobs:
       group: ${{ github.workflow }}
       cancel-in-progress: false
     steps:
-      - name: Configure Git
-        run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+      - uses: actions/checkout@v4
 
       - name: Install Helm
         uses: azure/setup-helm@v1
