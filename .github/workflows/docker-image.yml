@@ -112,6 +112,8 @@ jobs:
             yq eval '.version = "${{ env.VERSION }}"' -i charts/my-chart/Chart.yaml
 
       - name: set github pages url
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           url=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq '.html_url')
           echo "PAGES_URL=$url" >> "$GITHUB_ENV"
