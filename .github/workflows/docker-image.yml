@@ -13,6 +13,7 @@ env:
   SHOULD_RELEASE: ${{ startsWith(github.ref, 'refs/tags/v') }}
   SHOULD_PUSH: ${{ github.event_name != 'pull_request' }}
   IS_LATEST: false
+  PAGES_URL:
 
 permissions:
   contents: write
@@ -110,13 +111,17 @@ jobs:
             yq eval '.appVersion = "${{ env.VERSION }}"' -i charts/my-chart/Chart.yaml
             yq eval '.version = "${{ env.VERSION }}"' -i charts/my-chart/Chart.yaml
 
+      - name: set github pages url
+        run: |
+          url=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq '.html_url')
+          echo "PAGES_URL=$url" >> "$GITHUB_ENV"
+
       - working-directory: charts
         if: ${{ fromJSON(env.SHOULD_RELEASE) }}
-        run:  |
-          url=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq '.html_url')
+        run: |
           helm package ./my-chart
-          curl --output _index.yaml "${url}/index.yaml"
-          helm repo index . --url "${url}" --merge ./_index.yaml
+          curl --output _index.yaml ${{env.PAGES_URL}}/index.yaml
+          helm repo index . --url ${{env.PAGES_URL}} --merge ./_index.yaml
           mkdir ../pages
           mv index.yaml ../pages/
           mv *.tgz ../pages/
