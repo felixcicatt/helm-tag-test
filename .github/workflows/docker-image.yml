@@ -5,7 +5,7 @@ on:
     branches: ["main"]
     tags: ["v*.*.*"]
   pull_request:
-    branches: ["main", "release-*.*.x"]
+    branches: ["main", "release-*"]
   workflow_dispatch:
 
 env:
