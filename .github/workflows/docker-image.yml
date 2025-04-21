@@ -87,7 +87,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          push: ${{ fromJSON(env.SHOULD_PUSH) }}
+          push: ${{ env.SHOULD_PUSH }}
           sbom: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
