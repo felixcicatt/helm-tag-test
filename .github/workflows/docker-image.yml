@@ -13,9 +13,9 @@ env:
   IMAGE_NAME: ${{ github.repository }}
   SHOULD_PUSH: ${{ github.event_name != 'pull_request' }}
   IS_LATEST: false
-  PAGES_URL:
   REPO_NAME: my-repo
   CHART_NAME: my-chart
+  VERSION:
 
 permissions:
   contents: write
@@ -27,8 +27,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
 
     steps:
       - uses: actions/checkout@v4
@@ -79,6 +77,9 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha
 
+      - name: set version in env
+        run: echo "VERSION=${{ startsWith(github.ref, 'refs/tags/v') && fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] || '0.0.0' }}" >> "$GITHUB_ENV"
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
@@ -87,7 +88,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            VERSION=${{ startsWith(github.ref, 'refs/tags/v') && fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] || '0.0.0' }}
+            VERSION=${{ env.VERSION }}
             REVISION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.revision'] }}
           context: ./my-app
           cache-from: type=gha
@@ -102,59 +103,16 @@ jobs:
         run: helm template . --debug
         working-directory: ./charts/my-chart
 
-  release:
-    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
-    needs: build
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    concurrency:
-      group: ${{ github.workflow }}
-      cancel-in-progress: false
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Helm
-        uses: azure/setup-helm@v1
-        with:
-          version: v3.8.1
-
       - name: Update chart values with new image tag
         uses: mikefarah/yq@master
-        env:
-          VERSION: ${{ needs.build.outputs.version }}
         with:
           cmd: |
             yq eval '.appVersion = "${{ env.VERSION }}"' -i charts/my-chart/Chart.yaml
             yq eval '.version = "${{ env.VERSION }}"' -i charts/my-chart/Chart.yaml
-
-      - name: set github pages url
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          url=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq '.html_url')
-          echo "PAGES_URL=$url" >> "$GITHUB_ENV"
-
-      - name: package chart and create new index
+            
+      - name: push helm chart to oci
         working-directory: charts
-        env:
-          chart-name: my-chart
-          repo-name: my-repo
         run: |
-          helm repo add ${{env.REPO_NAME}} ${{env.PAGES_URL}}
-          helm search repo ${{env.REPO_NAME}}/${{env.CHART_NAME}} --versions -o json | jq -c '.[] | .version' | while read i; do helm pull ${{env.REPO_NAME}}/${{env.CHART_NAME}} --version $(echo $i | tr -d '"') || continue; done
           helm package ./${{env.CHART_NAME}}
-          helm repo index . --url ${{env.PAGES_URL}}
-          mkdir ../pages
-          mv index.yaml ../pages/
-          mv *.tgz ../pages/
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          # directory of your reports
-          path: pages
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io/${{ github.repository }} --username ${{ github.actor }} --password-stdin
+          helm push ${{env.CHART_NAME}}-${{ env.VERSION }}.tgz oci://ghcr.io/${{ github.repository }}
