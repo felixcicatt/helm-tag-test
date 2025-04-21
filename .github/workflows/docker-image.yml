@@ -144,7 +144,7 @@ jobs:
         continue-on-error: true
         run: |
           helm repo add ${{env.REPO_NAME}} ${{env.PAGES_URL}}
-          helm search repo ${{env.REPO_NAME}}/${{env.CHART_NAME}} --versions -o json | jq -c '.[] | .version' | while read i; do helm pull ${{env.REPO_NAME}}/${{env.CHART_NAME}} --version $(echo $i | tr -d '"'); done
+          helm search repo ${{env.REPO_NAME}}/${{env.CHART_NAME}} --versions -o json | jq -c '.[] | .version' | while read i; do helm pull ${{env.REPO_NAME}}/${{env.CHART_NAME}} --version $(echo $i | tr -d '"') || continue; done
           helm package ./${{env.CHART_NAME}}
           helm repo index . --url ${{env.PAGES_URL}}
           mkdir ../pages
