@@ -129,30 +129,7 @@ jobs:
             yq eval '.appVersion = "${{ env.VERSION }}"' -i charts/my-chart/Chart.yaml
             yq eval '.version = "${{ env.VERSION }}"' -i charts/my-chart/Chart.yaml
 
-      - name: set github pages url
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          url=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq '.html_url')
-          echo "PAGES_URL=$url" >> "$GITHUB_ENV"
-
-      - name: package chart and create new index
-        working-directory: charts
-        run: |
-          helm repo add ${{env.REPO_NAME}} ${{env.PAGES_URL}}
-          helm search repo ${{env.REPO_NAME}}/${{env.CHART_NAME}} --versions -o json | jq -c '.[] | .version' | while read i; do helm pull ${{env.REPO_NAME}}/${{env.CHART_NAME}} --version $(echo $i | tr -d '"') || continue; done
-          helm package ./${{env.CHART_NAME}}
-          curl --output _index.yaml ${{env.PAGES_URL}}/index.yaml
-          helm repo index . --url ${{env.PAGES_URL}} --merge ./_index.yaml
-          mkdir ../pages
-          mv index.yaml ../pages/
-          mv *.tgz ../pages/
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Build and Push the Helm Charts to GitHub Container Registry
+        uses: JimCronqvist/action-helm-chart-repo@master
         with:
-          # directory of your reports
-          path: pages
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          token: ${{ secrets.GITHUB_TOKEN }}
