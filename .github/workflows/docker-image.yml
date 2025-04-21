@@ -138,14 +138,12 @@ jobs:
 
       - name: package chart and create new index
         working-directory: charts
-        env:
-          chart-name: my-chart
-          repo-name: my-repo
         run: |
           helm repo add ${{env.REPO_NAME}} ${{env.PAGES_URL}}
           helm search repo ${{env.REPO_NAME}}/${{env.CHART_NAME}} --versions -o json | jq -c '.[] | .version' | while read i; do helm pull ${{env.REPO_NAME}}/${{env.CHART_NAME}} --version $(echo $i | tr -d '"') || continue; done
           helm package ./${{env.CHART_NAME}}
-          helm repo index . --url ${{env.PAGES_URL}}
+          curl --output _index.yaml ${{env.PAGES_URL}}/index.yaml
+          helm repo index . --url ${{env.PAGES_URL}} --merge ./_index.yaml
           mkdir ../pages
           mv index.yaml ../pages/
           mv *.tgz ../pages/
