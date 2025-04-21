@@ -110,7 +110,7 @@ jobs:
             yq eval '.appVersion = "${{ env.VERSION }}"' -i charts/my-chart/Chart.yaml
             yq eval '.version = "${{ env.VERSION }}"' -i charts/my-chart/Chart.yaml
             
-      - name: package chart and create new index
+      - name: push helm chart to oci
         working-directory: charts
         run: |
           helm package ./${{env.CHART_NAME}}
