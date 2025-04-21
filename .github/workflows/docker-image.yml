@@ -114,5 +114,5 @@ jobs:
         working-directory: charts
         run: |
           helm package ./${{env.CHART_NAME}}
-          helm registry login ghcr.io/${{ github.repository }} --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
-          helm push ${{env.CHART_NAME}}-${{ env.VERSION }}.tgz ghcr.io/${{ github.repository }}
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io/${{ github.repository }} --username ${{ github.actor }} --password-stdin
+          helm push ${{env.CHART_NAME}}-${{ env.VERSION }}.tgz oci://ghcr.io/${{ github.repository }}
